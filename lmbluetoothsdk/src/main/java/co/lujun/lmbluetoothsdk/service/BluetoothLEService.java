@@ -134,9 +134,15 @@ public class BluetoothLEService {
      * @param data data to send to the device
      */
     public void write(byte[] data){
+//        if (mWriteCharacteristic == null) {
+//
+//
+//            mWriteCharacteristic = new BluetoothGattCharacteristic(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"), BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE, BluetoothGattCharacteristic.PERMISSION_WRITE);
+//        }
         if (mBluetoothGatt != null){
             mWriteCharacteristic.setValue(data);
-            mBluetoothGatt.writeCharacteristic(mWriteCharacteristic);
+            boolean status = mBluetoothGatt.writeCharacteristic(mWriteCharacteristic);
+            Log.e("BluetoothGatt", status ? "SUCCESS" : "FAILURE");
         }
     }
 
@@ -179,7 +185,7 @@ public class BluetoothLEService {
                     for (BluetoothGattCharacteristic characteristic : characteristics) {
                         final int charaProp = characteristic.getProperties();
                         final String charaUUID = characteristic.getUuid().toString();
-
+                        Log.d("LMBluetoothSdk", "charaUUID : " + charaUUID);
                         if ((charaProp | BluetoothGattCharacteristic.PERMISSION_READ) > 0){
                             if(readCharacteristicUUID.isEmpty()){
                                 if (mNotifyCharacteristic != null){

@@ -1,11 +1,16 @@
 package co.lujun.sample;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -21,10 +26,14 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import co.lujun.lmbluetoothsdk.BluetoothLEController;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
+
+import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.Manifest.permission.BLUETOOTH;
+import static android.Manifest.permission.BLUETOOTH_ADMIN;
 
 /**
  * Author: lujun(http://blog.lujun.co)
@@ -32,6 +41,8 @@ import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
  */
 @TargetApi(21)
 public class BleActivity extends AppCompatActivity {
+
+    private static final int PERMISSION_REQUEST = 29;
 
     private BluetoothLEController mBLEController;
 
@@ -48,8 +59,8 @@ public class BleActivity extends AppCompatActivity {
     // You can change this options if you want to search by service and specify read/write
     // characteristics to be added to the controller
     private static final String SERVICE_ID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX";
-    private static final String READ_CHARACTERISTIC_ID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX";
-    private static final String WRITE_CHARACTERISTIC_ID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX";
+    private static final String READ_CHARACTERISTIC_ID = "00000af1-0000-1000-8000-00805f9b34fb";
+    private static final String WRITE_CHARACTERISTIC_ID = "00000af1-0000-1000-8000-00805f9b34fb";
 
     private BluetoothLEListener mBluetoothLEListener = new BluetoothLEListener() {
 
@@ -147,7 +158,10 @@ public class BleActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mList.add(device.getName() + "@" + device.getAddress());
+                    String deviceStr = device.getName() + "@" + device.getAddress();
+                    if (!mList.contains(deviceStr)) {
+                        mList.add(deviceStr);
+                    }
                     mFoundAdapter.notifyDataSetChanged();
                 }
             });
@@ -159,7 +173,43 @@ public class BleActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ble);
         getSupportActionBar().setTitle("BLE Sample");
+        checkPermissions();
         init();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void checkPermissions() {
+        int locationPermission = ContextCompat.checkSelfPermission(this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION);
+        int coarseLocationPermission = ContextCompat.checkSelfPermission(this,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION);
+        int bluetoothPermission = ContextCompat.checkSelfPermission(this,
+                android.Manifest.permission.BLUETOOTH);
+        int bluetoothAdminPermission = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.BLUETOOTH_ADMIN);
+        if (locationPermission != PackageManager.PERMISSION_GRANTED ||
+                coarseLocationPermission != PackageManager.PERMISSION_GRANTED ||
+                bluetoothPermission != PackageManager.PERMISSION_GRANTED ||
+                bluetoothAdminPermission != PackageManager.PERMISSION_GRANTED) {
+            // 無權限，向使用者請求
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[] {ACCESS_FINE_LOCATION,
+                            ACCESS_COARSE_LOCATION, BLUETOOTH, BLUETOOTH_ADMIN},
+                    PERMISSION_REQUEST
+            );
+        }
+//        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+//        if (mBluetoothAdapter != null) {
+//            if (!mBluetoothAdapter.isEnabled()) {
+//                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+//                startActivityForResult(enableBtIntent, PERMISSION_REQUEST);
+//            }
+//        }
     }
 
     private void init(){
@@ -219,7 +269,18 @@ public class BleActivity extends AppCompatActivity {
             public void onClick(View v) {
                 String msg = etSendContent.getText().toString();
                 if (!TextUtils.isEmpty(msg)) {
-                    mBLEController.write(msg.getBytes());
+                    //TODO: Create unbind command
+                    byte[] data = new byte[20];
+                    data[0] = 0x34;
+                    data[1] = 0x29;
+                    data[2] = (byte) 0xAA;
+                    data[3] = 0x55;
+                    data[4] = 0x55;
+                    for (int i = 5 ; i < 20; i++) {
+                        data[i] = 0x00;
+                    }
+                    mBLEController.write(data);
+//                    mBLEController.write(msg.getBytes());
                 }
             }
         });
