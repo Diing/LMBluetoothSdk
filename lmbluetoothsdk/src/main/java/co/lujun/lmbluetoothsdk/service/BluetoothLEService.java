@@ -31,16 +31,21 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.util.Log;
 
+import java.lang.reflect.Method;
 import java.util.List;
+import java.util.UUID;
 
 import co.lujun.lmbluetoothsdk.base.BaseListener;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
 import co.lujun.lmbluetoothsdk.base.State;
+
+import static android.content.ContentValues.TAG;
 
 /**
  * Author: lujun(http://blog.lujun.co)
@@ -52,13 +57,18 @@ public class BluetoothLEService {
     private BaseListener mBluetoothListener;
     private BluetoothGatt mBluetoothGatt;
     private BluetoothGattCharacteristic mWriteCharacteristic, mNotifyCharacteristic;
+    private String serviceUUID;
+    private String configUUID;
     private String writeCharacteristicUUID;
     private String readCharacteristicUUID;
 
     private int mState;
 
-    public BluetoothLEService(){
+    private Context mContext;
+
+    public BluetoothLEService(Context context) {
         mState = State.STATE_NONE;
+        mContext = context;
     }
 
     /**
@@ -129,6 +139,35 @@ public class BluetoothLEService {
         mBluetoothGatt = null;
     }
 
+    public void bond() {
+        if (mBluetoothGatt.getDevice().getBondState() == BluetoothDevice.BOND_NONE) {
+            final BluetoothDevice device = mBluetoothGatt.getDevice();
+            device.createBond();
+            Log.e(TAG, "BOND  Required");
+        }
+
+    }
+
+    public void unBond() {
+        try {
+            final BluetoothDevice device = mBluetoothGatt.getDevice();
+            Method m = device.getClass().getMethod("removeBond", (Class[]) null);
+            m.invoke(device, (Object[]) null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void unBond(BluetoothDevice device) {
+        try {
+            Method m = device.getClass().getMethod("removeBond", (Class[]) null);
+            m.invoke(device, (Object[]) null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
     /**
      * Write data to remote device.
      * @param data data to send to the device
@@ -146,12 +185,20 @@ public class BluetoothLEService {
         }
     }
 
+    public void setServiceUUID(String uuid) {
+        serviceUUID = uuid;
+    }
+
     public void setWriteCharacteristic(String characteristicUUID) {
         writeCharacteristicUUID = characteristicUUID;
     }
 
     public void setReadCharacteristic(String characteristicUUID) {
         readCharacteristicUUID = characteristicUUID;
+    }
+
+    public void setConfigUUID(String uuid) {
+        configUUID = uuid;
     }
 
     private BluetoothGattCallback mBTGattCallback = new BluetoothGattCallback() {
@@ -205,6 +252,9 @@ public class BluetoothLEService {
                                 mNotifyCharacteristic = characteristic;
                                 if( mBluetoothGatt.setCharacteristicNotification(characteristic, true) ) {
                                     Log.d("LMBluetoothSdk", "Subscribing to characteristic : " + characteristic.getUuid());
+                                    BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(configUUID));
+                                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                                    mBluetoothGatt.writeDescriptor(descriptor);
                                 }
                             }
                         }
@@ -223,6 +273,7 @@ public class BluetoothLEService {
                             }
                         }
                     }
+
                     if(mBluetoothListener != null){
                         ((BluetoothLEListener)mBluetoothListener).onDiscoveringCharacteristics(characteristics);
                     }

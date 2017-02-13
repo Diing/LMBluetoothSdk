@@ -1,6 +1,7 @@
 package co.lujun.sample;
 
 import android.bluetooth.BluetoothAdapter;
+import android.util.Log;
 
 import co.lujun.lmbluetoothsdk.base.State;
 
@@ -43,5 +44,17 @@ public class Utils {
             result = "OFF";
         }
         return result;
+    }
+
+    public static String logCommand(String tag, byte[] data) {
+        if (data != null && data.length > 0) {
+            final StringBuilder stringBuilder = new StringBuilder(data.length);
+            for (byte byteChar : data)
+                stringBuilder.append(String.format("%02X ", byteChar));
+            Log.e(tag, stringBuilder.toString());
+            return stringBuilder.toString();
+        }
+        Log.e(tag, "Not a command");
+        return "Not a command";
     }
 }

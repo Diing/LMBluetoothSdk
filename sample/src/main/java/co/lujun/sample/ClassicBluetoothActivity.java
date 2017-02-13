@@ -9,7 +9,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -43,6 +42,17 @@ public class ClassicBluetoothActivity extends AppCompatActivity {
     private static final String TAG = "LMBluetoothSdk";
 
     private BluetoothListener mListener = new BluetoothListener() {
+
+        @Override
+        public void onBond() {
+
+        }
+
+        @Override
+        public void onUnBond() {
+
+        }
+
         @Override
         public void onActionStateChanged(int preState, int state) {
             tvBTState.setText("Bluetooth state: " + Utils.transBtStateAsString(state));

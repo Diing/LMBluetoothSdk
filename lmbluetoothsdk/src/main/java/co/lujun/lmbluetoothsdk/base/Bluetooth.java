@@ -236,4 +236,8 @@ public abstract class Bluetooth {
     public int getConnectionState(){
         return State.STATE_UNKNOWN;
     }
+
+
+    public void bond() {}
+    public void unBond() {}
 }

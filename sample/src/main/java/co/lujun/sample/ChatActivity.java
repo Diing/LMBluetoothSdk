@@ -44,6 +44,17 @@ public class ChatActivity extends Activity {
 
         mBluetoothController = BluetoothController.getInstance();
         mBluetoothController.setBluetoothListener(new BluetoothListener() {
+
+            @Override
+            public void onBond() {
+
+            }
+
+            @Override
+            public void onUnBond() {
+
+            }
+
             @Override
             public void onActionStateChanged(int preState, int state) {
                 Toast.makeText(ChatActivity.this, "BT state: " + state, Toast.LENGTH_SHORT).show();
@@ -108,6 +119,7 @@ public class ChatActivity extends Activity {
                 etSend.setText("");
             }
         });
+
         btnDisconnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
