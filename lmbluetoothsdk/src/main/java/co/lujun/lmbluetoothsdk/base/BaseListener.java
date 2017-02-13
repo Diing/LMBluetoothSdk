@@ -75,4 +75,8 @@ public interface BaseListener {
      * @param rssi the RSSI value of the remote device as reported by the Bluetooth hardware
      */
     void onActionDeviceFound(BluetoothDevice device, short rssi);
+
+    void onBond();
+
+    void onUnBond();
 }

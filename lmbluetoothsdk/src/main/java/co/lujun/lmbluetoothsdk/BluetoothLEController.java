@@ -98,7 +98,7 @@ public class BluetoothLEController extends Bluetooth {
         final BluetoothManager bluetoothManager =
                 (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
-        mBluetoothLEService = new BluetoothLEService();
+        mBluetoothLEService = new BluetoothLEService(context);
         return this;
     }
 
@@ -161,6 +161,20 @@ public class BluetoothLEController extends Bluetooth {
         }
         scanLeDevice();
         return true;
+    }
+
+    @Override
+    public void bond() {
+        mBluetoothLEService.bond();
+    }
+
+    @Override
+    public void unBond() {
+        mBluetoothLEService.unBond();
+    }
+
+    public void unBond(BluetoothDevice device) {
+        mBluetoothLEService.unBond(device);
     }
 
     /**
@@ -290,6 +304,7 @@ public class BluetoothLEController extends Bluetooth {
     @Override
     public BluetoothDevice getConnectedDevice() {
         return mConnectDevice;
+
     }
 
     private BluetoothAdapter.LeScanCallback mLeScanCallback =

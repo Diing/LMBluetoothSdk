@@ -7,26 +7,28 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import co.lujun.lmbluetoothsdk.BluetoothLEController;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
@@ -52,9 +54,8 @@ public class BleActivity extends AppCompatActivity {
     private BaseAdapter mFoundAdapter;
 
     private ListView lvDevices;
-    private Button btnScan, btnDisconnect, btnReconnect, btnSend;
+    private Button btnScan, btnDisconnect, btnReconnect, btnSend, btnBind, btnUnBind;
     private TextView tvConnState, tvContent;
-    private EditText etSendContent;
 
     private static final String TAG = "LMBluetoothSdk";
 
@@ -68,14 +69,25 @@ public class BleActivity extends AppCompatActivity {
     private BluetoothLEListener mBluetoothLEListener = new BluetoothLEListener() {
 
         @Override
+        public void onBond() {
+            Log.e(TAG, "OnBond");
+        }
+
+        @Override
+        public void onUnBond() {
+            Log.e(TAG, "OnUnBond");
+        }
+
+
+        @Override
         public void onDiscoveringCharacteristics(final List<BluetoothGattCharacteristic> characteristics) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     for(BluetoothGattCharacteristic characteristic : characteristics){
                         Log.d(TAG, "onDiscoveringCharacteristics - characteristic : " + characteristic.getUuid());
-                    }
 
+                    }
                 }
             });
         }
@@ -100,8 +112,8 @@ public class BleActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    tvContent.append("Read from " + characteristic.getUuid()
-                            + ": " + parseData(characteristic) + "\n");
+                    String result = Utils.logCommand("OnReadData", characteristic.getValue());
+                    tvContent.append("Read from " + result + "\n");
                 }
             });
         }
@@ -111,7 +123,8 @@ public class BleActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    tvContent.append("Me" + ": " + parseData(characteristic) + "\n");
+                    String result = Utils.logCommand("OnWriteData", characteristic.getValue());
+                    tvContent.append("Me" + ": " + result + "\n");
                 }
             });
         }
@@ -119,12 +132,11 @@ public class BleActivity extends AppCompatActivity {
         @Override
         public void onDataChanged(final BluetoothGattCharacteristic characteristic) {
 
-            final String dataValue = characteristic.getStringValue(0);
-
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    tvContent.append( dataValue );
+                    String result = Utils.logCommand("OnDataChanged", characteristic.getValue());
+                    tvContent.append( result );
                 }
             });
         }
@@ -163,8 +175,17 @@ public class BleActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mList.add(device.getName() + "@" + device.getAddress());
-                    mFoundAdapter.notifyDataSetChanged();
+                    try {
+                        if (device.getName().contains("BODHI")) {
+                            String key = device.getName() + "@" + device.getAddress();
+                            if (!mList.contains(key)) {
+                                mList.add(key);
+                            }
+                            mFoundAdapter.notifyDataSetChanged();
+                        }
+                    } catch (NullPointerException e) {
+
+                    }
                 }
             });
         }
@@ -190,7 +211,7 @@ public class BleActivity extends AppCompatActivity {
             mList.clear();
             mFoundAdapter.notifyDataSetChanged();
 
-            if( mBLEController.startScan() ){
+            if( mBLEController.startScan() ) {
                 Toast.makeText(BleActivity.this, "Scanning!", Toast.LENGTH_SHORT).show();
             }
         }
@@ -242,9 +263,10 @@ public class BleActivity extends AppCompatActivity {
         btnDisconnect = (Button) findViewById(R.id.btn_ble_disconnect);
         btnReconnect = (Button) findViewById(R.id.btn_ble_reconnect);
         btnSend = (Button) findViewById(R.id.btn_ble_send);
+        btnBind = (Button) findViewById(R.id.btn_ble_bind);
+        btnUnBind = (Button) findViewById(R.id.btn_ble_unbind);
         tvConnState = (TextView) findViewById(R.id.tv_ble_conn_state);
         tvContent = (TextView) findViewById(R.id.tv_ble_chat_content);
-        etSendContent = (EditText) findViewById(R.id.et_ble_send_content);
 
         lvDevices.setAdapter(mFoundAdapter);
 
@@ -272,6 +294,7 @@ public class BleActivity extends AppCompatActivity {
 //                }
             }
         });
+
         btnDisconnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -284,15 +307,87 @@ public class BleActivity extends AppCompatActivity {
                 mBLEController.reConnect();
             }
         });
+
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String msg = etSendContent.getText().toString();
-                if (!TextUtils.isEmpty(msg)) {
-                    mBLEController.write(msg.getBytes());
+                byte[] data = new byte[20];
+                data[0] = (byte) 0x32;
+                data[1] = (byte) 0xa1;
+                for (int i = 2 ; i < 20; i++) {
+                    data[i] = (byte) 0x00;
+                }
+                Utils.logCommand("onClick", data);
+                mBLEController.write(data);
+            }
+        });
+
+        btnBind.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+                registerReceiver(mBondingBroadcastReceiver, filter);
+                //Bind
+//                byte[] data = new byte[20];
+//                data[0] = (byte) 0x34;
+//                data[1] = (byte) 0x28;
+//                data[2] = (byte) 0x01;
+//                data[3] = (byte) Build.VERSION.SDK_INT;
+//                data[4] = (byte) 0x55;
+//                data[5] = (byte) 0xaa;
+//                for (int i = 6 ; i < 20; i++) {
+//                    data[i] = (byte) 0x00;
+//                }
+//                Utils.logCommand("onClick", data);
+//                mBLEController.write(data);
+                try {
+                    final int state = mBLEController.getConnectedDevice().getBondState();
+                    switch (state) {
+                        case BluetoothDevice.BOND_NONE:
+                            Log.e(TAG, "BOND_NONE");
+                            mBLEController.bond();
+                            break;
+                        case BluetoothDevice.BOND_BONDED:
+                            Log.e(TAG, "BOND_BONDED");
+                            break;
+                        case BluetoothDevice.BOND_BONDING:
+                            Log.e(TAG, "BOND_BONDING");
+                            break;
+                    }
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
                 }
             }
         });
+
+        btnUnBind.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+                registerReceiver(mBondingBroadcastReceiver, filter);
+//                byte[] data = new byte[20];
+//                data[0] = (byte) 0x34;
+//                data[1] = (byte) 0x29;
+//                data[2] = (byte) 0xaa;
+//                data[3] = (byte) 0x55;
+//                data[4] = (byte) 0x55;
+//                data[5] = (byte) 0xaa;
+//                for (int i = 6 ; i < 20; i++) {
+//                    data[i] = (byte) 0x00;
+//                }
+//                Utils.logCommand("onClick", data);
+//                mBLEController.write(data);
+                mBLEController.unBond();
+            }
+        });
+
+        Set<BluetoothDevice> bondDevices = mBLEController.getBondedDevices();
+        for (BluetoothDevice device : bondDevices) {
+            String key = device.getName() + "@" + device.getAddress();
+            Log.e("Bonded", key);
+            mBLEController.unBond(device);
+        }
+
         lvDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -343,4 +438,26 @@ public class BleActivity extends AppCompatActivity {
 //      //  }
         return result;
     }
+
+    private BroadcastReceiver mBondingBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(final Context context, final Intent intent) {
+            final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+            final int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
+            final int previousBondState = intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, -1);
+
+            Log.e(TAG, "Bond state changed for: " + device.getAddress() + " new state: " + bondState + " previous: " + previousBondState);
+
+            // skip other devices
+            if (!device.getAddress().equals(mBLEController.getConnectedDevice().getAddress()))
+                return;
+
+            if (bondState == BluetoothDevice.BOND_BONDED) {
+                unregisterReceiver(this);
+                //mCallbacks.onBonded();
+            } else if (bondState == BluetoothDevice.BOND_NONE) {
+                unregisterReceiver(this);
+            }
+        }
+    };
 }

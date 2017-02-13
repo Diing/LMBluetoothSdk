@@ -7,7 +7,7 @@
     <ListView
         android:id="@+id/lv_ble_devices"
         android:layout_width="match_parent"
-        android:layout_height="150dp" />
+        android:layout_height="100dp" />
 
     <TextView
         android:id="@+id/tv_ble_conn_state"
@@ -47,7 +47,6 @@
             android:layout_height="wrap_content"
             android:layout_margin="3dp"
             android:layout_weight="1"
-            android:singleLine="true"
             android:text="Reconnect" />
     </LinearLayout>
 
@@ -67,21 +66,29 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <EditText
-            android:id="@+id/et_ble_send_content"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_margin="3dp"
-            android:layout_weight="1" />
-
         <Button
             android:id="@+id/btn_ble_send"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="3dp"
             android:layout_weight="1"
-            android:singleLine="true"
             android:text="Send" />
+
+        <Button
+            android:id="@+id/btn_ble_bind"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="3dp"
+            android:layout_weight="1"
+            android:text="Bind" />
+
+        <Button
+            android:id="@+id/btn_ble_unbind"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="3dp"
+            android:layout_weight="1"
+            android:text="UnBind" />
 
     </LinearLayout>
 </LinearLayout>
