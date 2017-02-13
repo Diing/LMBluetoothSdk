@@ -1,11 +1,17 @@
 package co.lujun.sample;
 
+import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -21,10 +27,14 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import co.lujun.lmbluetoothsdk.BluetoothLEController;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
+
+import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.Manifest.permission.BLUETOOTH;
+import static android.Manifest.permission.BLUETOOTH_ADMIN;
 
 /**
  * Author: lujun(http://blog.lujun.co)
@@ -32,6 +42,9 @@ import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
  */
 @TargetApi(21)
 public class BleActivity extends AppCompatActivity {
+
+    private static final int PERMISSION_REQUEST = 29;
+    private static final int REQUEST_ENABLE_BT = 1;
 
     private BluetoothLEController mBLEController;
 
@@ -47,9 +60,10 @@ public class BleActivity extends AppCompatActivity {
 
     // You can change this options if you want to search by service and specify read/write
     // characteristics to be added to the controller
-    private static final String SERVICE_ID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX";
-    private static final String READ_CHARACTERISTIC_ID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX";
-    private static final String WRITE_CHARACTERISTIC_ID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX";
+    public static final String SERVICE_ID = "00000b10-0000-1000-8000-00805f9b34fb";
+    public static final String READ_CHARACTERISTIC_ID = "00000b17-0000-1000-8000-00805f9b34fb";
+    public static final String WRITE_CHARACTERISTIC_ID = "00000b16-0000-1000-8000-00805f9b34fb";
+    public static final String BIND_CONFIG_UUID = "00002902-0000-1000-8000-00805f9b34fb";
 
     private BluetoothLEListener mBluetoothLEListener = new BluetoothLEListener() {
 
@@ -72,7 +86,9 @@ public class BleActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     for(BluetoothGattService service : services){
-//                        Log.d(TAG, "onDiscoveringServices - service : " + service.getUuid());
+                        if (service.getUuid().toString().equals(SERVICE_ID)) {
+                            //Correct id
+                        }
                     }
 
                 }
@@ -159,7 +175,59 @@ public class BleActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ble);
         getSupportActionBar().setTitle("BLE Sample");
+        checkPermissions();
         init();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // User chose not to enable Bluetooth.
+        if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
+            finish();
+            return;
+        }
+        if (requestCode == PERMISSION_REQUEST) {
+            mList.clear();
+            mFoundAdapter.notifyDataSetChanged();
+
+            if( mBLEController.startScan() ){
+                Toast.makeText(BleActivity.this, "Scanning!", Toast.LENGTH_SHORT).show();
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+
+    private void checkPermissions() {
+        int locationPermission = ContextCompat.checkSelfPermission(this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION);
+        int coarseLocationPermission = ContextCompat.checkSelfPermission(this,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION);
+        int bluetoothPermission = ContextCompat.checkSelfPermission(this,
+                android.Manifest.permission.BLUETOOTH);
+        int bluetoothAdminPermission = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.BLUETOOTH_ADMIN);
+        if (locationPermission != PackageManager.PERMISSION_GRANTED ||
+                coarseLocationPermission != PackageManager.PERMISSION_GRANTED ||
+                bluetoothPermission != PackageManager.PERMISSION_GRANTED ||
+                bluetoothAdminPermission != PackageManager.PERMISSION_GRANTED) {
+            // 無權限，向使用者請求
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[] {ACCESS_FINE_LOCATION,
+                            ACCESS_COARSE_LOCATION, BLUETOOTH, BLUETOOTH_ADMIN},
+                    PERMISSION_REQUEST
+            );
+        } else {
+
+        }
+//        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+//        if (mBluetoothAdapter != null) {
+//            if (!mBluetoothAdapter.isEnabled()) {
+//                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+//                startActivityForResult(enableBtIntent, PERMISSION_REQUEST);
+//            }
+//        }
     }
 
     private void init(){
@@ -180,8 +248,10 @@ public class BleActivity extends AppCompatActivity {
 
         lvDevices.setAdapter(mFoundAdapter);
 
+        mBLEController.setServiceUuid(SERVICE_ID);
         mBLEController.setReadCharacteristic(READ_CHARACTERISTIC_ID);
         mBLEController.setWriteCharacteristic(WRITE_CHARACTERISTIC_ID);
+        mBLEController.setConfigUuid(BIND_CONFIG_UUID);
 
         btnScan.setOnClickListener(new View.OnClickListener() {
             @Override

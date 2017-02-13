@@ -39,12 +39,12 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
+import android.os.ParcelUuid;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import android.os.ParcelUuid;
 
 import co.lujun.lmbluetoothsdk.base.Bluetooth;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
@@ -303,12 +303,20 @@ public class BluetoothLEController extends Bluetooth {
 
     };
 
+    public void setServiceUuid(String uuid){
+        mBluetoothLEService.setServiceUUID(uuid);
+    }
+
     public void setWriteCharacteristic(String characteristicUUID) {
         mBluetoothLEService.setWriteCharacteristic(characteristicUUID);
     }
 
     public void setReadCharacteristic(String characteristicUUID) {
         mBluetoothLEService.setReadCharacteristic(characteristicUUID);
+    }
+
+    public void setConfigUuid(String uuid) {
+        mBluetoothLEService.setConfigUUID(uuid);
     }
 
     private CBTScanCallback mCbtScanCallback;

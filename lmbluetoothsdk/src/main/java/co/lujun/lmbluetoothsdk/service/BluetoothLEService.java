@@ -52,6 +52,8 @@ public class BluetoothLEService {
     private BaseListener mBluetoothListener;
     private BluetoothGatt mBluetoothGatt;
     private BluetoothGattCharacteristic mWriteCharacteristic, mNotifyCharacteristic;
+    private String serviceUUID;
+    private String configUUID;
     private String writeCharacteristicUUID;
     private String readCharacteristicUUID;
 
@@ -140,12 +142,20 @@ public class BluetoothLEService {
         }
     }
 
+    public void setServiceUUID(String uuid) {
+        serviceUUID = uuid;
+    }
+
     public void setWriteCharacteristic(String characteristicUUID) {
         writeCharacteristicUUID = characteristicUUID;
     }
 
     public void setReadCharacteristic(String characteristicUUID) {
         readCharacteristicUUID = characteristicUUID;
+    }
+
+    public void setConfigUUID(String uuid) {
+        configUUID = uuid;
     }
 
     private BluetoothGattCallback mBTGattCallback = new BluetoothGattCallback() {
