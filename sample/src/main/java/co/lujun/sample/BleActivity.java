@@ -26,12 +26,18 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.command.CommandTool;
+import com.command.bind.UnBindKit;
+import interfaces.OnResponseHandler;
+import response.BaseResponse;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import co.lujun.lmbluetoothsdk.BluetoothLEController;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
+import util.DIException;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
@@ -135,7 +141,23 @@ public class BleActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    String result = Utils.logCommand("OnDataChanged", characteristic.getValue());
+                    byte[] response = characteristic.getValue();
+                    try {
+                        CommandTool.shared().getResult(response, new OnResponseHandler() {
+                            @Override
+                            public void completion(BaseResponse response, DIException error) {
+                                if (error == null) {
+                                    Toast.makeText(BleActivity.this, "解除綁定成功", Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(BleActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
+                                }
+
+                            }
+                        });
+                    } catch (DIException e) {
+                        Toast.makeText(BleActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                    String result = Utils.logCommand("OnDataChanged", response);
                     tvContent.append( result );
                 }
             });
@@ -375,9 +397,11 @@ public class BleActivity extends AppCompatActivity {
 //                for (int i = 6 ; i < 20; i++) {
 //                    data[i] = (byte) 0x00;
 //                }
-//                Utils.logCommand("onClick", data);
-//                mBLEController.write(data);
-                mBLEController.unBond();
+                byte[] data = UnBindKit.getCommand();
+                Utils.logCommand("onClick", data);
+                mBLEController.write(data);
+
+//                mBLEController.unBond();
             }
         });
 
