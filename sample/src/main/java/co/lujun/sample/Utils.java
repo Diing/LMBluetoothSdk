@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.util.Log;
 
 import co.lujun.lmbluetoothsdk.base.State;
+import diing.com.core.util.Logger;
 
 /**
  * Author: lujun(http://blog.lujun.co)
@@ -54,7 +55,7 @@ public class Utils {
             Log.e(tag, stringBuilder.toString());
             return stringBuilder.toString();
         }
-        Log.e(tag, "Not a command");
+        Logger.e(tag, "Not a command");
         return "Not a command";
     }
 }

@@ -26,18 +26,19 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.command.CommandTool;
-import com.command.info.GetDeviceInfoKit;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import co.lujun.lmbluetoothsdk.BluetoothLEController;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
-import interfaces.OnResponseHandler;
-import response.BaseResponse;
-import util.DIException;
+import diing.com.core.command.CommandTool;
+import diing.com.core.command.info.GetDeviceInfoKit;
+import diing.com.core.interfaces.OnResponseHandler;
+import diing.com.core.response.BaseResponse;
+import diing.com.core.response.DeviceInfo;
+import diing.com.core.util.DIException;
+import diing.com.core.util.Logger;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
@@ -90,7 +91,7 @@ public class BleActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    for(BluetoothGattCharacteristic characteristic : characteristics){
+                    for (BluetoothGattCharacteristic characteristic : characteristics) {
                         Log.d(TAG, "onDiscoveringCharacteristics - characteristic : " + characteristic.getUuid());
 
                     }
@@ -103,7 +104,7 @@ public class BleActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    for(BluetoothGattService service : services){
+                    for (BluetoothGattService service : services) {
                         if (service.getUuid().toString().equals(SERVICE_ID)) {
                             //Correct id
                         }
@@ -143,29 +144,19 @@ public class BleActivity extends AppCompatActivity {
                 public void run() {
                     byte[] response = characteristic.getValue();
                     try {
-                        CommandTool.shared().getResult(response, new OnResponseHandler() {
-                            @Override
-                            public void completion(BaseResponse response, DIException error) {
-                                if (error == null) {
-                                    Toast.makeText(BleActivity.this, "解除綁定成功", Toast.LENGTH_LONG).show();
-                                } else {
-                                    Toast.makeText(BleActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
-                                }
-
-                            }
-                        });
+                        CommandTool.shared().getResult(response, responseHandler);
                     } catch (DIException e) {
                         Toast.makeText(BleActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                     }
                     String result = Utils.logCommand("OnDataChanged", response);
-                    tvContent.append( result );
+                    tvContent.append(result);
                 }
             });
         }
 
         @Override
         public void onActionStateChanged(int preState, int state) {
-            Log.d(TAG, "onActionStateChanged: " + state);
+            Logger.d(TAG, "onActionStateChanged: " + state);
         }
 
         @Override
@@ -179,7 +170,7 @@ public class BleActivity extends AppCompatActivity {
 
         @Override
         public void onActionScanModeChanged(int preScanMode, int scanMode) {
-            Log.d(TAG, "onActionScanModeChanged:  " + scanMode);
+            Logger.d(TAG, "onActionScanModeChanged:  " + scanMode);
         }
 
         @Override
@@ -233,13 +224,12 @@ public class BleActivity extends AppCompatActivity {
             mList.clear();
             mFoundAdapter.notifyDataSetChanged();
 
-            if( mBLEController.startScan() ) {
+            if (mBLEController.startScan()) {
                 Toast.makeText(BleActivity.this, "Scanning!", Toast.LENGTH_SHORT).show();
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
-
 
     private void checkPermissions() {
         int locationPermission = ContextCompat.checkSelfPermission(this,
@@ -257,7 +247,7 @@ public class BleActivity extends AppCompatActivity {
             // 無權限，向使用者請求
             ActivityCompat.requestPermissions(
                     this,
-                    new String[] {ACCESS_FINE_LOCATION,
+                    new String[]{ACCESS_FINE_LOCATION,
                             ACCESS_COARSE_LOCATION, BLUETOOTH, BLUETOOTH_ADMIN},
                     PERMISSION_REQUEST
             );
@@ -273,7 +263,7 @@ public class BleActivity extends AppCompatActivity {
 //        }
     }
 
-    private void init(){
+    private void init() {
         mBLEController = BluetoothLEController.getInstance().build(this);
         mBLEController.setBluetoothListener(mBluetoothLEListener);
 
@@ -303,7 +293,7 @@ public class BleActivity extends AppCompatActivity {
                 mList.clear();
                 mFoundAdapter.notifyDataSetChanged();
 
-                if( mBLEController.startScan() ){
+                if (mBLEController.startScan()) {
                     Toast.makeText(BleActivity.this, "Scanning!", Toast.LENGTH_SHORT).show();
                 }
 
@@ -336,7 +326,7 @@ public class BleActivity extends AppCompatActivity {
                 byte[] data = new byte[20];
                 data[0] = (byte) 0x32;
                 data[1] = (byte) 0xa1;
-                for (int i = 2 ; i < 20; i++) {
+                for (int i = 2; i < 20; i++) {
                     data[i] = (byte) 0x00;
                 }
                 Utils.logCommand("onClick", data);
@@ -366,14 +356,14 @@ public class BleActivity extends AppCompatActivity {
                     final int state = mBLEController.getConnectedDevice().getBondState();
                     switch (state) {
                         case BluetoothDevice.BOND_NONE:
-                            Log.e(TAG, "BOND_NONE");
+                            Logger.e(TAG, "BOND_NONE");
                             mBLEController.bond();
                             break;
                         case BluetoothDevice.BOND_BONDED:
-                            Log.e(TAG, "BOND_BONDED");
+                            Logger.e(TAG, "BOND_BONDED");
                             break;
                         case BluetoothDevice.BOND_BONDING:
-                            Log.e(TAG, "BOND_BONDING");
+                            Logger.e(TAG, "BOND_BONDING");
                             break;
                     }
                 } catch (NullPointerException e) {
@@ -403,13 +393,13 @@ public class BleActivity extends AppCompatActivity {
                 mBLEController.write(data);
 
 //                mBLEController.unBond();
-    }
-});
+            }
+        });
 
         Set<BluetoothDevice> bondDevices = mBLEController.getBondedDevices();
         for (BluetoothDevice device : bondDevices) {
             String key = device.getName() + "@" + device.getAddress();
-            Log.e("Bonded", key);
+            Logger.e("Bonded", key);
             mBLEController.unBond(device);
         }
 
@@ -421,7 +411,7 @@ public class BleActivity extends AppCompatActivity {
             }
         });
 
-        if (!mBLEController.isSupportBLE()){
+        if (!mBLEController.isSupportBLE()) {
             Toast.makeText(BleActivity.this, "Unsupport BLE!", Toast.LENGTH_SHORT).show();
             finish();
         }
@@ -433,7 +423,7 @@ public class BleActivity extends AppCompatActivity {
         mBLEController.release();
     }
 
-    private String parseData(BluetoothGattCharacteristic characteristic){
+    private String parseData(BluetoothGattCharacteristic characteristic) {
 
         String result = characteristic.getStringValue(0);
 
@@ -464,6 +454,39 @@ public class BleActivity extends AppCompatActivity {
         return result;
     }
 
+    /**
+     * BLE response handler
+    * */
+    private OnResponseHandler responseHandler = new OnResponseHandler() {
+        @Override
+        public void onUpgrade(BaseResponse response, DIException error) {
+
+        }
+
+        @Override
+        public void onBindCompletion(BaseResponse response, DIException error) {
+            if (error == null) {
+                Toast.makeText(BleActivity.this, "解除綁定成功", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(BleActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        }
+
+        @Override
+        public void onUnBindCompletion(BaseResponse response, DIException error) {
+            if (error == null) {
+                Toast.makeText(BleActivity.this, "解除綁定成功", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(BleActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        }
+
+        @Override
+        public void onGetDeviceInfoCompletion(DeviceInfo response, DIException error) {
+            Logger.i("DeviceInfo", response.toString());
+        }
+    };
+
     private BroadcastReceiver mBondingBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(final Context context, final Intent intent) {
@@ -471,7 +494,7 @@ public class BleActivity extends AppCompatActivity {
             final int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
             final int previousBondState = intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, -1);
 
-            Log.e(TAG, "Bond state changed for: " + device.getAddress() + " new state: " + bondState + " previous: " + previousBondState);
+            Logger.e(TAG, "Bond state changed for: " + device.getAddress() + " new state: " + bondState + " previous: " + previousBondState);
 
             // skip other devices
             if (!device.getAddress().equals(mBLEController.getConnectedDevice().getAddress()))
