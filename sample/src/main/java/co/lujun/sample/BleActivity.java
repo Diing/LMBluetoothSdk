@@ -34,12 +34,18 @@ import co.lujun.lmbluetoothsdk.BluetoothLEController;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
 import diing.com.core.command.CommandTool;
 import diing.com.core.command.info.GetBattertInfoKit;
+import diing.com.core.command.info.GetRealTimeBodhi;
+import diing.com.core.command.info.GetRealTimeDataKit;
+import diing.com.core.interfaces.OnBindUnBindHandler;
 import diing.com.core.interfaces.OnResponseHandler;
+import diing.com.core.interfaces.OnSettingHandler;
 import diing.com.core.response.BaseResponse;
 import diing.com.core.response.BatteryInfoResponse;
 import diing.com.core.response.DeviceInfoResponse;
 import diing.com.core.response.DeviceSupportFunctionsResopnse;
 import diing.com.core.response.DeviceTimeResponse;
+import diing.com.core.response.RealTimeBodhiResponse;
+import diing.com.core.response.RealTimeDataResponse;
 import diing.com.core.util.DIException;
 import diing.com.core.util.Logger;
 
@@ -147,7 +153,7 @@ public class BleActivity extends AppCompatActivity {
                 public void run() {
                     byte[] response = characteristic.getValue();
                     try {
-                        CommandTool.shared().getResult(response, responseHandler);
+                        CommandTool.shared().getResult(response);
                     } catch (DIException e) {
                         Toast.makeText(BleActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                     }
@@ -267,6 +273,11 @@ public class BleActivity extends AppCompatActivity {
     }
 
     private void init() {
+
+        //設定Handler
+        CommandTool.shared().setSettingCb(settingHandler);
+        CommandTool.shared().setResponseCb(responseHandler);
+
         mBLEController = BluetoothLEController.getInstance().build(this);
         mBLEController.setBluetoothListener(mBluetoothLEListener);
 
@@ -394,7 +405,9 @@ public class BleActivity extends AppCompatActivity {
 //                byte[] data = GetDeviceInfoKit.getCommand();
 //                byte[] data = GetSupportFunctionsKit.getCommand();
 //                byte[] data = GetMacAddress.getCommand();
-                byte[] data = GetBattertInfoKit.getCommand();
+//                byte[] data = GetBattertInfoKit.getCommand();
+//                byte[] data = GetRealTimeDataKit.getCommand();
+                byte[] data = GetRealTimeBodhi.getCommand();
                 Utils.logCommand("onClick", data);
                 mBLEController.write(data);
 
@@ -463,12 +476,7 @@ public class BleActivity extends AppCompatActivity {
     /**
      * BLE response handler
     * */
-    private OnResponseHandler responseHandler = new OnResponseHandler() {
-        @Override
-        public void onUpgrade(BaseResponse response) {
-
-        }
-
+    private OnBindUnBindHandler bindUnBindHandler = new OnBindUnBindHandler() {
         @Override
         public void onBindCompletion(BaseResponse response) {
             if (response.getStatus()) {
@@ -485,6 +493,13 @@ public class BleActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(BleActivity.this, response.getError().getMessage(), Toast.LENGTH_LONG).show();
             }
+        }
+    };
+
+    private OnResponseHandler responseHandler = new OnResponseHandler() {
+        @Override
+        public void onUpgrade(BaseResponse response) {
+
         }
 
         @Override
@@ -510,6 +525,63 @@ public class BleActivity extends AppCompatActivity {
         @Override
         public void onGetBatteryInfoCompletion(BatteryInfoResponse response) {
             Logger.i(response.toString());
+        }
+
+        @Override
+        public void onGetRealTimeDataCompletion(RealTimeDataResponse response) {
+            Logger.i(response.toString());
+        }
+
+        @Override
+        public void onGetRealTimeBodhiCompletion(RealTimeBodhiResponse response) {
+            Logger.i(response.toString());
+        }
+    };
+
+    private OnSettingHandler settingHandler = new OnSettingHandler() {
+        @Override
+        public void onSetTimeCompletion(BaseResponse response) {
+
+        }
+
+        @Override
+        public void onSetAlarmCompletion(BaseResponse response) {
+
+        }
+
+        @Override
+        public void onSetGoalCompletion(BaseResponse response) {
+
+        }
+
+        @Override
+        public void onSetUserDataCompletion(BaseResponse response) {
+
+        }
+
+        @Override
+        public void onSetUserUnitFormatCompletion(BaseResponse response) {
+
+        }
+
+        @Override
+        public void onSetImeiCompletion(BaseResponse response) {
+
+        }
+
+        @Override
+        public void onSetSitAlarmCompletion(BaseResponse response) {
+
+        }
+
+        @Override
+        public void onSetSitLosingCompletion(BaseResponse response) {
+
+        }
+
+        @Override
+        public void onSetFindPhoneCompletion(BaseResponse response) {
+
         }
     };
 
