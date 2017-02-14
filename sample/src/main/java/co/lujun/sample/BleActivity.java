@@ -33,10 +33,11 @@ import java.util.Set;
 import co.lujun.lmbluetoothsdk.BluetoothLEController;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
 import diing.com.core.command.CommandTool;
-import diing.com.core.command.info.GetDeviceInfoKit;
+import diing.com.core.command.info.GetSupportFunctionsKit;
 import diing.com.core.interfaces.OnResponseHandler;
 import diing.com.core.response.BaseResponse;
-import diing.com.core.response.DeviceInfo;
+import diing.com.core.response.DeviceInfoResponse;
+import diing.com.core.response.DeviceSupportFunctionsResopnse;
 import diing.com.core.util.DIException;
 import diing.com.core.util.Logger;
 
@@ -388,7 +389,8 @@ public class BleActivity extends AppCompatActivity {
 //                    data[i] = (byte) 0x00;
 //                }
 //                byte[] data = UnBindKit.getCommand();
-                byte[] data = GetDeviceInfoKit.getCommand();
+//                byte[] data = GetDeviceInfoKit.getCommand();
+                byte[] data = GetSupportFunctionsKit.getCommand();
                 Utils.logCommand("onClick", data);
                 mBLEController.write(data);
 
@@ -482,8 +484,13 @@ public class BleActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onGetDeviceInfoCompletion(DeviceInfo response, DIException error) {
-            Logger.i("DeviceInfo", response.toString());
+        public void onGetDeviceInfoCompletion(DeviceInfoResponse response, DIException error) {
+            Logger.i("DeviceInfoResponse", response.toString());
+        }
+
+        @Override
+        public void onGetDeviceSupportFunctionsCompletion(DeviceSupportFunctionsResopnse response, DIException error) {
+            Logger.i("DeviceInfoResponse", response.toString());
         }
     };
 
