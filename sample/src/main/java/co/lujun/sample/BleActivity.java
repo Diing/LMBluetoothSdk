@@ -33,11 +33,13 @@ import java.util.Set;
 import co.lujun.lmbluetoothsdk.BluetoothLEController;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
 import diing.com.core.command.CommandTool;
-import diing.com.core.command.info.GetSupportFunctionsKit;
+import diing.com.core.command.info.GetBattertInfoKit;
 import diing.com.core.interfaces.OnResponseHandler;
 import diing.com.core.response.BaseResponse;
+import diing.com.core.response.BatteryInfoResponse;
 import diing.com.core.response.DeviceInfoResponse;
 import diing.com.core.response.DeviceSupportFunctionsResopnse;
+import diing.com.core.response.DeviceTimeResponse;
 import diing.com.core.util.DIException;
 import diing.com.core.util.Logger;
 
@@ -390,7 +392,9 @@ public class BleActivity extends AppCompatActivity {
 //                }
 //                byte[] data = UnBindKit.getCommand();
 //                byte[] data = GetDeviceInfoKit.getCommand();
-                byte[] data = GetSupportFunctionsKit.getCommand();
+//                byte[] data = GetSupportFunctionsKit.getCommand();
+//                byte[] data = GetMacAddress.getCommand();
+                byte[] data = GetBattertInfoKit.getCommand();
                 Utils.logCommand("onClick", data);
                 mBLEController.write(data);
 
@@ -461,36 +465,51 @@ public class BleActivity extends AppCompatActivity {
     * */
     private OnResponseHandler responseHandler = new OnResponseHandler() {
         @Override
-        public void onUpgrade(BaseResponse response, DIException error) {
+        public void onUpgrade(BaseResponse response) {
 
         }
 
         @Override
-        public void onBindCompletion(BaseResponse response, DIException error) {
-            if (error == null) {
-                Toast.makeText(BleActivity.this, "解除綁定成功", Toast.LENGTH_LONG).show();
+        public void onBindCompletion(BaseResponse response) {
+            if (response.getStatus()) {
+                Toast.makeText(BleActivity.this, "綁定成功", Toast.LENGTH_LONG).show();
             } else {
-                Toast.makeText(BleActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(BleActivity.this, response.getError().getMessage(), Toast.LENGTH_LONG).show();
             }
         }
 
         @Override
-        public void onUnBindCompletion(BaseResponse response, DIException error) {
-            if (error == null) {
+        public void onUnBindCompletion(BaseResponse response) {
+            if (response.getStatus()) {
                 Toast.makeText(BleActivity.this, "解除綁定成功", Toast.LENGTH_LONG).show();
             } else {
-                Toast.makeText(BleActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(BleActivity.this, response.getError().getMessage(), Toast.LENGTH_LONG).show();
             }
         }
 
         @Override
-        public void onGetDeviceInfoCompletion(DeviceInfoResponse response, DIException error) {
+        public void onGetDeviceInfoCompletion(DeviceInfoResponse response) {
             Logger.i("DeviceInfoResponse", response.toString());
         }
 
         @Override
-        public void onGetDeviceSupportFunctionsCompletion(DeviceSupportFunctionsResopnse response, DIException error) {
+        public void onGetDeviceSupportFunctionsCompletion(DeviceSupportFunctionsResopnse response) {
             Logger.i("DeviceInfoResponse", response.toString());
+        }
+
+        @Override
+        public void onGetDeviceTimeCompletion(DeviceTimeResponse response) {
+            Logger.i(response.toString());
+        }
+
+        @Override
+        public void onGetMacCompletion(String mac) {
+            Logger.i(mac);
+        }
+
+        @Override
+        public void onGetBatteryInfoCompletion(BatteryInfoResponse response) {
+            Logger.i(response.toString());
         }
     };
 
