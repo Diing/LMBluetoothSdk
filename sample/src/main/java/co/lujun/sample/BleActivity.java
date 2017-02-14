@@ -27,9 +27,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.command.CommandTool;
-import com.command.bind.UnBindKit;
-import interfaces.OnResponseHandler;
-import response.BaseResponse;
+import com.command.info.GetDeviceInfoKit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +35,8 @@ import java.util.Set;
 
 import co.lujun.lmbluetoothsdk.BluetoothLEController;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
+import interfaces.OnResponseHandler;
+import response.BaseResponse;
 import util.DIException;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
@@ -397,13 +397,14 @@ public class BleActivity extends AppCompatActivity {
 //                for (int i = 6 ; i < 20; i++) {
 //                    data[i] = (byte) 0x00;
 //                }
-                byte[] data = UnBindKit.getCommand();
+//                byte[] data = UnBindKit.getCommand();
+                byte[] data = GetDeviceInfoKit.getCommand();
                 Utils.logCommand("onClick", data);
                 mBLEController.write(data);
 
 //                mBLEController.unBond();
-            }
-        });
+    }
+});
 
         Set<BluetoothDevice> bondDevices = mBLEController.getBondedDevices();
         for (BluetoothDevice device : bondDevices) {
