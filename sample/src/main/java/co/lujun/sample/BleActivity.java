@@ -33,16 +33,15 @@ import java.util.Set;
 import co.lujun.lmbluetoothsdk.BluetoothLEController;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
 import diing.com.core.command.CommandTool;
-import diing.com.core.command.info.GetBattertInfoKit;
-import diing.com.core.command.info.GetRealTimeBodhi;
-import diing.com.core.command.info.GetRealTimeDataKit;
+import diing.com.core.command.info.GetDeviceTimeKit;
+import diing.com.core.command.setting.SettingTimeKit;
 import diing.com.core.interfaces.OnBindUnBindHandler;
 import diing.com.core.interfaces.OnResponseHandler;
 import diing.com.core.interfaces.OnSettingHandler;
 import diing.com.core.response.BaseResponse;
 import diing.com.core.response.BatteryInfoResponse;
 import diing.com.core.response.DeviceInfoResponse;
-import diing.com.core.response.DeviceSupportFunctionsResopnse;
+import diing.com.core.response.SupportFunctionsResponse;
 import diing.com.core.response.DeviceTimeResponse;
 import diing.com.core.response.RealTimeBodhiResponse;
 import diing.com.core.response.RealTimeDataResponse;
@@ -277,6 +276,7 @@ public class BleActivity extends AppCompatActivity {
         //設定Handler
         CommandTool.shared().setSettingCb(settingHandler);
         CommandTool.shared().setResponseCb(responseHandler);
+        CommandTool.shared().setBindUnBindHandler(bindUnBindHandler);
 
         mBLEController = BluetoothLEController.getInstance().build(this);
         mBLEController.setBluetoothListener(mBluetoothLEListener);
@@ -337,12 +337,13 @@ public class BleActivity extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                byte[] data = new byte[20];
-                data[0] = (byte) 0x32;
-                data[1] = (byte) 0xa1;
-                for (int i = 2; i < 20; i++) {
-                    data[i] = (byte) 0x00;
-                }
+//                byte[] data = new byte[20];
+//                data[0] = (byte) 0x32;
+//                data[1] = (byte) 0xa1;
+//                for (int i = 2; i < 20; i++) {
+//                    data[i] = (byte) 0x00;
+//                }
+                byte[] data = SettingTimeKit.getCommand(2017, 2, 14, 21, 50, 10, 2);
                 Utils.logCommand("onClick", data);
                 mBLEController.write(data);
             }
@@ -403,11 +404,12 @@ public class BleActivity extends AppCompatActivity {
 //                }
 //                byte[] data = UnBindKit.getCommand();
 //                byte[] data = GetDeviceInfoKit.getCommand();
+                byte[] data = GetDeviceTimeKit.getCommand();
 //                byte[] data = GetSupportFunctionsKit.getCommand();
 //                byte[] data = GetMacAddress.getCommand();
 //                byte[] data = GetBattertInfoKit.getCommand();
 //                byte[] data = GetRealTimeDataKit.getCommand();
-                byte[] data = GetRealTimeBodhi.getCommand();
+//                byte[] data = GetRealTimeBodhi.getCommand();
                 Utils.logCommand("onClick", data);
                 mBLEController.write(data);
 
@@ -508,7 +510,7 @@ public class BleActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onGetDeviceSupportFunctionsCompletion(DeviceSupportFunctionsResopnse response) {
+        public void onGetDeviceSupportFunctionsCompletion(SupportFunctionsResponse response) {
             Logger.i("DeviceInfoResponse", response.toString());
         }
 
