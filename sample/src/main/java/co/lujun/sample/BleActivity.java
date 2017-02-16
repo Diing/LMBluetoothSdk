@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -32,19 +33,28 @@ import java.util.Set;
 
 import co.lujun.lmbluetoothsdk.BluetoothLEController;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
+import co.lujun.lmbluetoothsdk.base.State;
 import diing.com.core.command.CommandTool;
-import diing.com.core.command.info.GetDeviceTimeKit;
-import diing.com.core.command.setting.SettingTimeKit;
+import diing.com.core.command.bind.BindKit;
+import diing.com.core.command.bind.UnBindKit;
+import diing.com.core.command.info.GetDeviceInfoKit;
+import diing.com.core.command.sync.SyncRequestKit;
+import diing.com.core.command.sync.SyncSportRequestKit;
+import diing.com.core.enumeration.CommandKit;
+import diing.com.core.enumeration.SyncMode;
+import diing.com.core.enumeration.SyncState;
+import diing.com.core.enumeration.SyncType;
 import diing.com.core.interfaces.OnBindUnBindHandler;
 import diing.com.core.interfaces.OnResponseHandler;
 import diing.com.core.interfaces.OnSettingHandler;
+import diing.com.core.interfaces.OnSyncRequestHandler;
 import diing.com.core.response.BaseResponse;
 import diing.com.core.response.BatteryInfoResponse;
 import diing.com.core.response.DeviceInfoResponse;
-import diing.com.core.response.SupportFunctionsResponse;
 import diing.com.core.response.DeviceTimeResponse;
 import diing.com.core.response.RealTimeBodhiResponse;
 import diing.com.core.response.RealTimeDataResponse;
+import diing.com.core.response.SupportFunctionsResponse;
 import diing.com.core.util.DIException;
 import diing.com.core.util.Logger;
 
@@ -70,15 +80,20 @@ public class BleActivity extends AppCompatActivity {
 
     private ListView lvDevices;
     private Button btnScan, btnDisconnect, btnReconnect, btnSend, btnBind, btnUnBind;
+    private Button btnBegin, btnBeginSync, btnHistorySync, btnEnd;
     private TextView tvConnState, tvContent;
 
     private static final String TAG = "LMBluetoothSdk";
 
     // You can change this options if you want to search by service and specify read/write
     // characteristics to be added to the controller
+    public static final String REMOTE_NAME = "BODHI";
+    public static final String REMOTE_MAC = "7C:D3:0A:05:F8:F7";
     public static final String SERVICE_ID = "00000b10-0000-1000-8000-00805f9b34fb";
-    public static final String READ_CHARACTERISTIC_ID = "00000b17-0000-1000-8000-00805f9b34fb";
-    public static final String WRITE_CHARACTERISTIC_ID = "00000b16-0000-1000-8000-00805f9b34fb";
+    public static final String READ_CHARACTERISTIC_ID = "00000b17-0000-1000-8000-00805f9b34fbxx";
+    public static final String WRITE_CHARACTERISTIC_ID = "00000b16-0000-1000-8000-00805f9b34fbxx";
+    public static final String SYNC_READ_CHARACTERISTIC_ID = "00000b12-0000-1000-8000-00805f9b34fb";
+    public static final String SYNC_WRITE_CHARACTERISTIC_ID = "00000b11-0000-1000-8000-00805f9b34fb";
     public static final String BIND_CONFIG_UUID = "00002902-0000-1000-8000-00805f9b34fb";
 
     private BluetoothLEListener mBluetoothLEListener = new BluetoothLEListener() {
@@ -140,6 +155,11 @@ public class BleActivity extends AppCompatActivity {
                 public void run() {
                     String result = Utils.logCommand("OnWriteData", characteristic.getValue());
                     tvContent.append("Me" + ": " + result + "\n");
+                    try {
+                        CommandTool.shared().writeSuccess(characteristic.getValue());
+                    } catch (DIException e) {
+                        Toast.makeText(BleActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
                 }
             });
         }
@@ -277,12 +297,26 @@ public class BleActivity extends AppCompatActivity {
         CommandTool.shared().setSettingCb(settingHandler);
         CommandTool.shared().setResponseCb(responseHandler);
         CommandTool.shared().setBindUnBindHandler(bindUnBindHandler);
+        CommandTool.shared().setSyncRequestCb(syncRequestHandler);
 
         mBLEController = BluetoothLEController.getInstance().build(this);
         mBLEController.setBluetoothListener(mBluetoothLEListener);
 
         mList = new ArrayList<String>();
         mFoundAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mList);
+
+        //取得已綁定的Device
+        Set<BluetoothDevice> bondedList = mBLEController.getBondedDevices();
+        for (BluetoothDevice device : bondedList) {
+            if (device.getName().contains("BODHI")) {
+                String key = device.getName() + "@" + device.getAddress();
+                mList.add(key);
+            }
+        }
+
+//        String key = REMOTE_NAME + "@" + REMOTE_MAC;
+//        mList.add(key);
+
 
         lvDevices = (ListView) findViewById(R.id.lv_ble_devices);
         btnScan = (Button) findViewById(R.id.btn_ble_scan);
@@ -294,12 +328,24 @@ public class BleActivity extends AppCompatActivity {
         tvConnState = (TextView) findViewById(R.id.tv_ble_conn_state);
         tvContent = (TextView) findViewById(R.id.tv_ble_chat_content);
 
+        btnBegin = (Button) findViewById(R.id.btn_ble_begin);
+        btnBeginSync = (Button) findViewById(R.id.btn_ble_begin_sync);
+        btnHistorySync = (Button) findViewById(R.id.btn_ble_history_sync);
+        btnEnd = (Button) findViewById(R.id.btn_ble_end);
+
         lvDevices.setAdapter(mFoundAdapter);
 
         mBLEController.setServiceUuid(SERVICE_ID);
         mBLEController.setReadCharacteristic(READ_CHARACTERISTIC_ID);
         mBLEController.setWriteCharacteristic(WRITE_CHARACTERISTIC_ID);
+        mBLEController.setSyncReadCharacteristic(SYNC_READ_CHARACTERISTIC_ID);
+        mBLEController.setSyncWriteCharacteristic(SYNC_WRITE_CHARACTERISTIC_ID);
         mBLEController.setConfigUuid(BIND_CONFIG_UUID);
+
+        btnBegin.setEnabled(true);
+        btnBeginSync.setEnabled(false);
+        btnHistorySync.setEnabled(false);
+        btnEnd.setEnabled(true);
 
         btnScan.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -343,7 +389,11 @@ public class BleActivity extends AppCompatActivity {
 //                for (int i = 2; i < 20; i++) {
 //                    data[i] = (byte) 0x00;
 //                }
-                byte[] data = SettingTimeKit.getCommand(2017, 2, 14, 21, 50, 10, 2);
+                if (mBLEController.getConnectionState() != State.STATE_CONNECTED && mBLEController.getConnectionState() != State.STATE_GOT_CHARACTERISTICS) {
+                    Toast.makeText(BleActivity.this, "尚未連線", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                byte[] data = GetDeviceInfoKit.getCommand();
                 Utils.logCommand("onClick", data);
                 mBLEController.write(data);
             }
@@ -352,77 +402,78 @@ public class BleActivity extends AppCompatActivity {
         btnBind.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (mBLEController.getConnectionState() != State.STATE_CONNECTED && mBLEController.getConnectionState() != State.STATE_GOT_CHARACTERISTICS) {
+                    Toast.makeText(BleActivity.this, "尚未連線", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
                 registerReceiver(mBondingBroadcastReceiver, filter);
                 //Bind
-//                byte[] data = new byte[20];
-//                data[0] = (byte) 0x34;
-//                data[1] = (byte) 0x28;
-//                data[2] = (byte) 0x01;
-//                data[3] = (byte) Build.VERSION.SDK_INT;
-//                data[4] = (byte) 0x55;
-//                data[5] = (byte) 0xaa;
-//                for (int i = 6 ; i < 20; i++) {
-//                    data[i] = (byte) 0x00;
-//                }
-//                Utils.logCommand("onClick", data);
-//                mBLEController.write(data);
-                try {
-                    final int state = mBLEController.getConnectedDevice().getBondState();
-                    switch (state) {
-                        case BluetoothDevice.BOND_NONE:
-                            Logger.e(TAG, "BOND_NONE");
-                            mBLEController.bond();
-                            break;
-                        case BluetoothDevice.BOND_BONDED:
-                            Logger.e(TAG, "BOND_BONDED");
-                            break;
-                        case BluetoothDevice.BOND_BONDING:
-                            Logger.e(TAG, "BOND_BONDING");
-                            break;
-                    }
-                } catch (NullPointerException e) {
-                    e.printStackTrace();
-                }
+                byte[] data = BindKit.getCommand(Build.VERSION.SDK_INT);
+                Utils.logCommand("onClick", data);
+                mBLEController.write(data);
             }
         });
 
         btnUnBind.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (mBLEController.getConnectionState() != State.STATE_CONNECTED && mBLEController.getConnectionState() != State.STATE_GOT_CHARACTERISTICS) {
+                    Toast.makeText(BleActivity.this, "尚未連線", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
                 registerReceiver(mBondingBroadcastReceiver, filter);
-//                byte[] data = new byte[20];
-//                data[0] = (byte) 0x34;
-//                data[1] = (byte) 0x29;
-//                data[2] = (byte) 0xaa;
-//                data[3] = (byte) 0x55;
-//                data[4] = (byte) 0x55;
-//                data[5] = (byte) 0xaa;
-//                for (int i = 6 ; i < 20; i++) {
-//                    data[i] = (byte) 0x00;
-//                }
-//                byte[] data = UnBindKit.getCommand();
 //                byte[] data = GetDeviceInfoKit.getCommand();
-                byte[] data = GetDeviceTimeKit.getCommand();
+//                byte[] data = GetDeviceTimeKit.getCommand();
 //                byte[] data = GetSupportFunctionsKit.getCommand();
 //                byte[] data = GetMacAddress.getCommand();
 //                byte[] data = GetBattertInfoKit.getCommand();
 //                byte[] data = GetRealTimeDataKit.getCommand();
 //                byte[] data = GetRealTimeBodhi.getCommand();
+                byte[] data = UnBindKit.getCommand();
                 Utils.logCommand("onClick", data);
                 mBLEController.write(data);
-
-//                mBLEController.unBond();
             }
         });
 
-        Set<BluetoothDevice> bondDevices = mBLEController.getBondedDevices();
-        for (BluetoothDevice device : bondDevices) {
-            String key = device.getName() + "@" + device.getAddress();
-            Logger.e("Bonded", key);
-            mBLEController.unBond(device);
-        }
+        btnBegin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                byte[] data = SyncRequestKit.getCommand(SyncType.manual, SyncMode.safe);
+                Utils.logCommand("onClick", data);
+                mBLEController.write(data, SYNC_WRITE_CHARACTERISTIC_ID);
+            }
+        });
+
+        btnBeginSync.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                byte[] data = SyncSportRequestKit.getCommand(SyncState.begin);
+                Utils.logCommand("onClick", data);
+                CommandTool.shared().setCurrentSyncRequest(CommandKit.SyncSport);
+                mBLEController.write(data, SYNC_WRITE_CHARACTERISTIC_ID);
+            }
+        });
+
+        btnHistorySync.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                byte[] data = SyncSportRequestKit.getHistoryCommand(SyncState.begin);
+                Utils.logCommand("onClick", data);
+                CommandTool.shared().setCurrentSyncRequest(CommandKit.SyncSportHistory);
+                mBLEController.write(data, SYNC_WRITE_CHARACTERISTIC_ID);
+            }
+        });
+
+        btnEnd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                byte[] data = SyncRequestKit.getStopCommand(SyncType.manual, SyncMode.safe);
+                Utils.logCommand("onClick", data);
+                mBLEController.write(data, SYNC_WRITE_CHARACTERISTIC_ID);
+            }
+        });
 
         lvDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -436,6 +487,14 @@ public class BleActivity extends AppCompatActivity {
             Toast.makeText(BleActivity.this, "Unsupport BLE!", Toast.LENGTH_SHORT).show();
             finish();
         }
+
+        //自動連上線
+        if (mList.size() > 0) {
+            String itemStr = mList.get(0);
+            String mac = itemStr.substring(itemStr.length() - 17);
+            mBLEController.connect(mac);
+        }
+
     }
 
     @Override
@@ -482,6 +541,7 @@ public class BleActivity extends AppCompatActivity {
         @Override
         public void onBindCompletion(BaseResponse response) {
             if (response.getStatus()) {
+                mBLEController.bond();
                 Toast.makeText(BleActivity.this, "綁定成功", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(BleActivity.this, response.getError().getMessage(), Toast.LENGTH_LONG).show();
@@ -491,6 +551,7 @@ public class BleActivity extends AppCompatActivity {
         @Override
         public void onUnBindCompletion(BaseResponse response) {
             if (response.getStatus()) {
+                mBLEController.unBond();
                 Toast.makeText(BleActivity.this, "解除綁定成功", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(BleActivity.this, response.getError().getMessage(), Toast.LENGTH_LONG).show();
@@ -587,6 +648,36 @@ public class BleActivity extends AppCompatActivity {
         }
     };
 
+    private OnSyncRequestHandler syncRequestHandler = new OnSyncRequestHandler() {
+        @Override
+        public void onBeginRequestCompletion(BaseResponse response) {
+            btnBeginSync.setEnabled(true);
+            btnHistorySync.setEnabled(true);
+        }
+
+        @Override
+        public void onSportDataSyncBegin() {
+            CommandTool.shared().clearPackets();
+        }
+
+        @Override
+        public void onSportDataReceived(byte[] data) {
+            CommandTool.shared().addSportPacket(data);
+        }
+
+        @Override
+        public void onSportDataSyncEnd() {
+            byte[] data = SyncRequestKit.getStopCommand(SyncType.manual, SyncMode.safe);
+            mBLEController.write(data, SYNC_WRITE_CHARACTERISTIC_ID);
+        }
+
+        @Override
+        public void onEndRequestCompletion(BaseResponse response) {
+            btnBeginSync.setEnabled(false);
+            btnHistorySync.setEnabled(false);
+        }
+    };
+
     private BroadcastReceiver mBondingBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(final Context context, final Intent intent) {
@@ -602,9 +693,13 @@ public class BleActivity extends AppCompatActivity {
 
             if (bondState == BluetoothDevice.BOND_BONDED) {
                 unregisterReceiver(this);
-                //mCallbacks.onBonded();
-            } else if (bondState == BluetoothDevice.BOND_NONE) {
+                Toast.makeText(BleActivity.this, "Bonded", Toast.LENGTH_LONG);
+            } else if (bondState == BluetoothDevice.BOND_BONDING) {
+                Toast.makeText(BleActivity.this, "Bonding", Toast.LENGTH_LONG);
+            }
+            else if (bondState == BluetoothDevice.BOND_NONE) {
                 unregisterReceiver(this);
+                Toast.makeText(BleActivity.this, "Bond faild", Toast.LENGTH_LONG);
             }
         }
     };

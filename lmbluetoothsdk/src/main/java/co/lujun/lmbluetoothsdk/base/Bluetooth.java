@@ -209,6 +209,12 @@ public abstract class Bluetooth {
     public void write(byte[] data){}
 
     /**
+     * Write data to remote device with specific characteristic uuid
+     * @param data the byte array represent the data
+     * */
+    public void write(byte[] data, String uuid) {}
+
+    /**
      * Get the connected remote device if connection is available, else return null
      * @return a connected remote device
      */

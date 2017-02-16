@@ -56,11 +56,14 @@ public class BluetoothLEService {
 
     private BaseListener mBluetoothListener;
     private BluetoothGatt mBluetoothGatt;
-    private BluetoothGattCharacteristic mWriteCharacteristic, mNotifyCharacteristic;
+    private BluetoothGattCharacteristic mInfoWriteCharacteristic, mInfoNotifyCharacteristic;
+    private BluetoothGattCharacteristic mSyncWriteCharacteristic, mSyncNotifyCharacteristic;
     private String serviceUUID;
     private String configUUID;
-    private String writeCharacteristicUUID;
-    private String readCharacteristicUUID;
+    private String infoWriteUUID;
+    private String infoReadUUID;
+    private String syncWriteUUID;
+    private String syncReadUUID;
 
     private int mState;
 
@@ -107,7 +110,7 @@ public class BluetoothLEService {
      */
     public void connect(Context context, BluetoothDevice device){
         setState(State.STATE_CONNECTING);
-        mBluetoothGatt = device.connectGatt(context, false, mBTGattCallback);
+        mBluetoothGatt = device.connectGatt(context, true, mBTGattCallback);
     }
 
     /**
@@ -169,19 +172,33 @@ public class BluetoothLEService {
 
 
     /**
-     * Write data to remote device.
+     * Write data to remote device via Info characteristic..
      * @param data data to send to the device
      */
     public void write(byte[] data){
-//        if (mWriteCharacteristic == null) {
-//
-//
-//            mWriteCharacteristic = new BluetoothGattCharacteristic(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"), BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE, BluetoothGattCharacteristic.PERMISSION_WRITE);
-//        }
         if (mBluetoothGatt != null){
-            mWriteCharacteristic.setValue(data);
-            boolean status = mBluetoothGatt.writeCharacteristic(mWriteCharacteristic);
+            mInfoWriteCharacteristic.setValue(data);
+            boolean status = mBluetoothGatt.writeCharacteristic(mInfoWriteCharacteristic);
+            Log.e("BluetoothGatt", "Write via UUID:" + mInfoWriteCharacteristic.getUuid().toString());
             Log.e("BluetoothGatt", status ? "SUCCESS" : "FAILURE");
+        }
+    }
+
+    /**
+     * Write data to remote device via Sync characteristic.
+     * @param data data to send to the device
+     */
+    public void write(byte[] data, String uuid) {
+        if (mBluetoothGatt != null) {
+            BluetoothGattCharacteristic characteristic = mBluetoothGatt.getService(UUID.fromString(serviceUUID)).getCharacteristic(UUID.fromString(uuid));
+            if (characteristic != null) {
+                characteristic.setValue(data);
+                boolean status = mBluetoothGatt.writeCharacteristic(characteristic);
+                Log.e("BluetoothGatt", "Write via UUID:" + characteristic.getUuid().toString());
+                Log.e("BluetoothGatt", status ? "SUCCESS" : "FAILURE");
+            } else {
+                Log.e("BluetoothGatt", "Characteristic not exist");
+            }
         }
     }
 
@@ -190,11 +207,19 @@ public class BluetoothLEService {
     }
 
     public void setWriteCharacteristic(String characteristicUUID) {
-        writeCharacteristicUUID = characteristicUUID;
+        infoWriteUUID = characteristicUUID;
     }
 
     public void setReadCharacteristic(String characteristicUUID) {
-        readCharacteristicUUID = characteristicUUID;
+        infoReadUUID = characteristicUUID;
+    }
+
+    public void setSyncWriteCharacteristic(String UUID) {
+        syncWriteUUID = UUID;
+    }
+
+    public void setSyncReadCharacteristic(String UUID) {
+        syncReadUUID = UUID;
     }
 
     public void setConfigUUID(String uuid) {
@@ -232,26 +257,36 @@ public class BluetoothLEService {
                     for (BluetoothGattCharacteristic characteristic : characteristics) {
                         final int charaProp = characteristic.getProperties();
                         final String charaUUID = characteristic.getUuid().toString();
-                        Log.d("LMBluetoothSdk", "charaUUID : " + charaUUID);
+                        Log.d("Assigning UUID", "charaUUID : " + charaUUID);
                         if ((charaProp | BluetoothGattCharacteristic.PERMISSION_READ) > 0){
-                            if(readCharacteristicUUID.isEmpty()){
-                                if (mNotifyCharacteristic != null){
-                                    mBluetoothGatt.setCharacteristicNotification(mNotifyCharacteristic, false);
-                                    mNotifyCharacteristic = null;
+                            if(infoReadUUID.isEmpty()){
+                                if (mInfoNotifyCharacteristic != null){
+                                    mBluetoothGatt.setCharacteristicNotification(mInfoNotifyCharacteristic, false);
+                                    mInfoNotifyCharacteristic = null;
                                 }
                                 gatt.readCharacteristic(characteristic);
                             }
-                            Log.d("LMBluetoothSdk", "Assigning read characteristic : " + characteristic.getUuid());
+                            Log.d("Assigning UUID", "Assigning read characteristic : " + characteristic.getUuid());
                         }
 
                         if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                            if(readCharacteristicUUID.isEmpty()){
-                                mNotifyCharacteristic = characteristic;
+                            if(infoReadUUID.isEmpty()){
+                                mInfoNotifyCharacteristic = characteristic;
                                 mBluetoothGatt.setCharacteristicNotification(characteristic, true);
-                            }else if(charaUUID.equalsIgnoreCase(readCharacteristicUUID)){
-                                mNotifyCharacteristic = characteristic;
+                            }else if(charaUUID.equalsIgnoreCase(infoReadUUID)){
+                                mInfoNotifyCharacteristic = characteristic;
                                 if( mBluetoothGatt.setCharacteristicNotification(characteristic, true) ) {
-                                    Log.d("LMBluetoothSdk", "Subscribing to characteristic : " + characteristic.getUuid());
+                                    Log.d("Assigning UUID", "Subscribing to characteristic : " + characteristic.getUuid());
+                                    BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(configUUID));
+                                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                                    mBluetoothGatt.writeDescriptor(descriptor);
+                                }
+                            }
+                            //Enable Sync characteristic
+                            if (charaUUID.equalsIgnoreCase(syncReadUUID)) {
+                                mSyncNotifyCharacteristic = characteristic;
+                                if (mBluetoothGatt.setCharacteristicNotification(characteristic, true)) {
+                                    Log.d("Assigning UUID", "Subscribing to characteristic : " + characteristic.getUuid());
                                     BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(configUUID));
                                     descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                                     mBluetoothGatt.writeDescriptor(descriptor);
@@ -259,18 +294,25 @@ public class BluetoothLEService {
                             }
                         }
 
-                        if(writeCharacteristicUUID.isEmpty()){
+                        if(infoWriteUUID.isEmpty()){
                             if (((charaProp & BluetoothGattCharacteristic.PERMISSION_WRITE)
                                     | (charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) > 0){
-                                mWriteCharacteristic = characteristic;
+                                mInfoWriteCharacteristic = characteristic;
                             }
-                        }else{
+                        } else{
                             if (((charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE)
                                     | (charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) > 0
-                                    & charaUUID.equalsIgnoreCase(writeCharacteristicUUID)) {
-                                Log.d("LMBluetoothSdk", "Assigning write characteristic : " + characteristic.getUuid());
-                                mWriteCharacteristic = characteristic;
+                                    & charaUUID.equalsIgnoreCase(infoWriteUUID)) {
+                                Log.d("Assigning UUID", "Assigning write characteristic : " + characteristic.getUuid());
+                                mInfoWriteCharacteristic = characteristic;
                             }
+                        }
+
+                        if (((charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE)
+                                | (charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) > 0
+                                & charaUUID.equalsIgnoreCase(syncWriteUUID)) {
+                            Log.d("Assigning UUID", "Assigning write characteristic : " + characteristic.getUuid());
+                            mSyncWriteCharacteristic = characteristic;
                         }
                     }
 

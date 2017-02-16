@@ -285,6 +285,13 @@ public class BluetoothLEController extends Bluetooth {
         }
     }
 
+    @Override
+    public void write(byte[] data, String uuid) {
+        if (mBluetoothLEService != null ) {
+            mBluetoothLEService.write(data, uuid);
+        }
+    }
+
     /**
      * Set scan time(unit millisecond)
      * @param time the scan time
@@ -328,6 +335,14 @@ public class BluetoothLEController extends Bluetooth {
 
     public void setReadCharacteristic(String characteristicUUID) {
         mBluetoothLEService.setReadCharacteristic(characteristicUUID);
+    }
+
+    public void setSyncWriteCharacteristic(String UUID) {
+        mBluetoothLEService.setSyncWriteCharacteristic(UUID);
+    }
+
+    public void setSyncReadCharacteristic(String UUID) {
+        mBluetoothLEService.setSyncReadCharacteristic(UUID);
     }
 
     public void setConfigUuid(String uuid) {

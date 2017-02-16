@@ -64,31 +64,72 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
-        <Button
-            android:id="@+id/btn_ble_send"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="3dp"
-            android:layout_weight="1"
-            android:text="Send" />
+            android:layout_height="wrap_content" android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/btn_ble_bind"
+            <Button
+                android:id="@+id/btn_ble_send"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:text="Send" />
+
+            <Button
+                android:id="@+id/btn_ble_bind"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:text="Bind" />
+
+            <Button
+                android:id="@+id/btn_ble_unbind"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:text="UnBind" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="3dp"
-            android:layout_weight="1"
-            android:text="Bind" />
+            android:layout_height="wrap_content" android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/btn_ble_unbind"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="3dp"
-            android:layout_weight="1"
-            android:text="UnBind" />
+            <Button
+                android:id="@+id/btn_ble_begin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:text="開始" />
 
+            <Button
+                android:id="@+id/btn_ble_begin_sync"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:text="當天數據" />
+
+            <Button
+                android:id="@+id/btn_ble_history_sync"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:text="歷史數據" />
+
+            <Button
+                android:id="@+id/btn_ble_end"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:text="停止" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>
