@@ -34,10 +34,11 @@ import java.util.Set;
 import co.lujun.lmbluetoothsdk.BluetoothLEController;
 import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
 import co.lujun.lmbluetoothsdk.base.State;
-import diing.com.core.command.CommandTool;
+import diing.com.core.command.CommandController;
 import diing.com.core.command.bind.BindKit;
 import diing.com.core.command.bind.UnBindKit;
 import diing.com.core.command.info.GetDeviceInfoKit;
+import diing.com.core.command.sync.SyncBodhiRequestKit;
 import diing.com.core.command.sync.SyncRequestKit;
 import diing.com.core.command.sync.SyncSleepRequestKit;
 import diing.com.core.command.sync.SyncSportRequestKit;
@@ -48,7 +49,7 @@ import diing.com.core.enumeration.SyncType;
 import diing.com.core.interfaces.OnBindUnBindHandler;
 import diing.com.core.interfaces.OnResponseHandler;
 import diing.com.core.interfaces.OnSettingHandler;
-import diing.com.core.interfaces.OnSyncRequestHandler;
+import diing.com.core.interfaces.OnSyncHandler;
 import diing.com.core.response.BaseResponse;
 import diing.com.core.response.BatteryInfoResponse;
 import diing.com.core.response.DeviceInfoResponse;
@@ -157,7 +158,7 @@ public class BleActivity extends AppCompatActivity {
                     String result = Utils.logCommand("OnWriteData", characteristic.getValue());
                     tvContent.append("Me" + ": " + result + "\n");
                     try {
-                        CommandTool.shared().writeSuccess(characteristic.getValue());
+                        CommandController.shared().getWriteResult(characteristic.getValue());
                     } catch (DIException e) {
                         Toast.makeText(BleActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                     }
@@ -173,7 +174,7 @@ public class BleActivity extends AppCompatActivity {
                 public void run() {
                     byte[] response = characteristic.getValue();
                     try {
-                        CommandTool.shared().getResult(response);
+                        CommandController.shared().getResult(response);
                     } catch (DIException e) {
                         Toast.makeText(BleActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                     }
@@ -294,11 +295,11 @@ public class BleActivity extends AppCompatActivity {
 
     private void init() {
 
-        //設定Handler
-        CommandTool.shared().setSettingCb(settingHandler);
-        CommandTool.shared().setResponseCb(responseHandler);
-        CommandTool.shared().setBindUnBindHandler(bindUnBindHandler);
-        CommandTool.shared().setSyncRequestCb(syncRequestHandler);
+        //註冊Handler
+        CommandController.shared().addListener(OnSyncHandler.class, syncHandler);
+        CommandController.shared().addListener(OnSettingHandler.class, settingHandler);
+        CommandController.shared().addListener(OnResponseHandler.class, responseHandler);
+        CommandController.shared().addListener(OnBindUnBindHandler.class, bindUnBindHandler);
 
         mBLEController = BluetoothLEController.getInstance().build(this);
         mBLEController.setBluetoothListener(mBluetoothLEListener);
@@ -450,9 +451,9 @@ public class BleActivity extends AppCompatActivity {
         btnBeginSync.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                byte[] data = SyncSleepRequestKit.getCommand(SyncState.begin);
+                byte[] data = SyncSportRequestKit.getCommand(SyncState.begin);
                 Utils.logCommand("onClick", data);
-                CommandTool.shared().setCurrentSyncRequest(CommandKit.SyncSleep);
+                CommandController.shared().setCurrentSyncRequest(CommandKit.SyncSport);
                 mBLEController.write(data, SYNC_WRITE_CHARACTERISTIC_ID);
             }
         });
@@ -460,9 +461,9 @@ public class BleActivity extends AppCompatActivity {
         btnHistorySync.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                byte[] data = SyncSleepRequestKit.getHistoryCommand(SyncState.begin);
+                byte[] data = SyncSportRequestKit.getHistoryCommand(SyncState.begin);
                 Utils.logCommand("onClick", data);
-                CommandTool.shared().setCurrentSyncRequest(CommandKit.SyncSleepHistory);
+                CommandController.shared().setCurrentSyncRequest(CommandKit.SyncSportHistory);
                 mBLEController.write(data, SYNC_WRITE_CHARACTERISTIC_ID);
             }
         });
@@ -572,12 +573,12 @@ public class BleActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onGetDeviceSupportFunctionsCompletion(SupportFunctionsResponse response) {
+        public void onGetSupportFunctionsCompletion(SupportFunctionsResponse response) {
             Logger.i("DeviceInfoResponse", response.toString());
         }
 
         @Override
-        public void onGetDeviceTimeCompletion(DeviceTimeResponse response) {
+        public void onGetTimeCompletion(DeviceTimeResponse response) {
             Logger.i(response.toString());
         }
 
@@ -639,7 +640,7 @@ public class BleActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onSetSitLosingCompletion(BaseResponse response) {
+        public void onSetLosingCompletion(BaseResponse response) {
 
         }
 
@@ -649,7 +650,7 @@ public class BleActivity extends AppCompatActivity {
         }
     };
 
-    private OnSyncRequestHandler syncRequestHandler = new OnSyncRequestHandler() {
+    private OnSyncHandler syncHandler = new OnSyncHandler() {
         @Override
         public void onBeginRequestCompletion(BaseResponse response) {
             btnBeginSync.setEnabled(true);
@@ -658,12 +659,12 @@ public class BleActivity extends AppCompatActivity {
 
         @Override
         public void onSyncBegin() {
-            CommandTool.shared().clearPackets();
+            CommandController.shared().clearPackets();
         }
 
         @Override
-        public void onSportDataReceived(byte[] data) {
-            CommandTool.shared().addSportPacket(data);
+        public void onSyncPacketReceived(byte[] data) {
+            CommandController.shared().addSportPacket(data);
         }
 
         @Override
