@@ -39,6 +39,7 @@ import diing.com.core.command.bind.BindKit;
 import diing.com.core.command.bind.UnBindKit;
 import diing.com.core.command.info.GetDeviceInfoKit;
 import diing.com.core.command.sync.SyncRequestKit;
+import diing.com.core.command.sync.SyncSleepRequestKit;
 import diing.com.core.command.sync.SyncSportRequestKit;
 import diing.com.core.enumeration.CommandKit;
 import diing.com.core.enumeration.SyncMode;
@@ -449,9 +450,9 @@ public class BleActivity extends AppCompatActivity {
         btnBeginSync.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                byte[] data = SyncSportRequestKit.getCommand(SyncState.begin);
+                byte[] data = SyncSleepRequestKit.getCommand(SyncState.begin);
                 Utils.logCommand("onClick", data);
-                CommandTool.shared().setCurrentSyncRequest(CommandKit.SyncSport);
+                CommandTool.shared().setCurrentSyncRequest(CommandKit.SyncSleep);
                 mBLEController.write(data, SYNC_WRITE_CHARACTERISTIC_ID);
             }
         });
@@ -459,9 +460,9 @@ public class BleActivity extends AppCompatActivity {
         btnHistorySync.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                byte[] data = SyncSportRequestKit.getHistoryCommand(SyncState.begin);
+                byte[] data = SyncSleepRequestKit.getHistoryCommand(SyncState.begin);
                 Utils.logCommand("onClick", data);
-                CommandTool.shared().setCurrentSyncRequest(CommandKit.SyncSportHistory);
+                CommandTool.shared().setCurrentSyncRequest(CommandKit.SyncSleepHistory);
                 mBLEController.write(data, SYNC_WRITE_CHARACTERISTIC_ID);
             }
         });
@@ -656,7 +657,7 @@ public class BleActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onSportDataSyncBegin() {
+        public void onSyncBegin() {
             CommandTool.shared().clearPackets();
         }
 
@@ -666,7 +667,7 @@ public class BleActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onSportDataSyncEnd() {
+        public void onSyncEnd() {
             byte[] data = SyncRequestKit.getStopCommand(SyncType.manual, SyncMode.safe);
             mBLEController.write(data, SYNC_WRITE_CHARACTERISTIC_ID);
         }
