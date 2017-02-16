@@ -31,16 +31,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import co.lujun.lmbluetoothsdk.BluetoothLEController;
-import co.lujun.lmbluetoothsdk.base.BluetoothLEListener;
-import co.lujun.lmbluetoothsdk.base.State;
-import diing.com.core.command.CommandController;
+import com.diing.bluetooth.controller.BluetoothLEController;
+import com.diing.bluetooth.interfaces.BluetoothLEListener;
+import com.diing.bluetooth.base.State;
+import diing.com.core.controller.CommandController;
 import diing.com.core.command.bind.BindKit;
 import diing.com.core.command.bind.UnBindKit;
 import diing.com.core.command.info.GetDeviceInfoKit;
-import diing.com.core.command.sync.SyncBodhiRequestKit;
 import diing.com.core.command.sync.SyncRequestKit;
-import diing.com.core.command.sync.SyncSleepRequestKit;
 import diing.com.core.command.sync.SyncSportRequestKit;
 import diing.com.core.enumeration.CommandKit;
 import diing.com.core.enumeration.SyncMode;
@@ -301,7 +299,7 @@ public class BleActivity extends AppCompatActivity {
         CommandController.shared().addListener(OnResponseHandler.class, responseHandler);
         CommandController.shared().addListener(OnBindUnBindHandler.class, bindUnBindHandler);
 
-        mBLEController = BluetoothLEController.getInstance().build(this);
+        mBLEController = BluetoothLEController.shared().build(this);
         mBLEController.setBluetoothListener(mBluetoothLEListener);
 
         mList = new ArrayList<String>();

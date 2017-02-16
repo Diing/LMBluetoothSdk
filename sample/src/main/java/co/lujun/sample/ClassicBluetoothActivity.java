@@ -23,9 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import co.lujun.lmbluetoothsdk.BluetoothController;
-import co.lujun.lmbluetoothsdk.base.BluetoothListener;
-import co.lujun.lmbluetoothsdk.base.State;
+import com.diing.bluetooth.controller.BluetoothController;
+import com.diing.bluetooth.interfaces.BluetoothListener;
+import com.diing.bluetooth.base.State;
 
 public class ClassicBluetoothActivity extends AppCompatActivity {
 

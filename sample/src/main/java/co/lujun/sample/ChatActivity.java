@@ -10,9 +10,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import co.lujun.lmbluetoothsdk.BluetoothController;
-import co.lujun.lmbluetoothsdk.base.BluetoothListener;
-import co.lujun.lmbluetoothsdk.base.State;
+import com.diing.bluetooth.controller.BluetoothController;
+import com.diing.bluetooth.interfaces.BluetoothListener;
+import com.diing.bluetooth.base.State;
 
 /**
  * Author: lujun(http://blog.lujun.co)

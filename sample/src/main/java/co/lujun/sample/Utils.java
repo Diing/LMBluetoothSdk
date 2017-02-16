@@ -3,7 +3,7 @@ package co.lujun.sample;
 import android.bluetooth.BluetoothAdapter;
 import android.util.Log;
 
-import co.lujun.lmbluetoothsdk.base.State;
+import com.diing.bluetooth.base.State;
 import diing.com.core.util.Logger;
 
 /**
