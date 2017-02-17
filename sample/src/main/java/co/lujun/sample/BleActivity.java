@@ -27,25 +27,26 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.diing.bluetooth.base.State;
+import com.diing.bluetooth.controller.BluetoothLEController;
+import com.diing.bluetooth.interfaces.BluetoothLEListener;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import com.diing.bluetooth.controller.BluetoothLEController;
-import com.diing.bluetooth.interfaces.BluetoothLEListener;
-import com.diing.bluetooth.base.State;
-import diing.com.core.controller.CommandController;
 import diing.com.core.command.bind.BindKit;
 import diing.com.core.command.bind.UnBindKit;
 import diing.com.core.command.info.GetDeviceInfoKit;
 import diing.com.core.command.sync.SyncRequestKit;
 import diing.com.core.command.sync.SyncSportRequestKit;
+import diing.com.core.controller.CommandController;
 import diing.com.core.enumeration.CommandKit;
 import diing.com.core.enumeration.SyncMode;
 import diing.com.core.enumeration.SyncState;
 import diing.com.core.enumeration.SyncType;
 import diing.com.core.interfaces.OnBindUnBindHandler;
-import diing.com.core.interfaces.OnResponseHandler;
+import diing.com.core.interfaces.OnGettingHandler;
 import diing.com.core.interfaces.OnSettingHandler;
 import diing.com.core.interfaces.OnSyncHandler;
 import diing.com.core.response.BaseResponse;
@@ -296,11 +297,11 @@ public class BleActivity extends AppCompatActivity {
         //註冊Handler
         CommandController.shared().addListener(OnSyncHandler.class, syncHandler);
         CommandController.shared().addListener(OnSettingHandler.class, settingHandler);
-        CommandController.shared().addListener(OnResponseHandler.class, responseHandler);
+        CommandController.shared().addListener(OnGettingHandler.class, responseHandler);
         CommandController.shared().addListener(OnBindUnBindHandler.class, bindUnBindHandler);
 
         mBLEController = BluetoothLEController.shared().build(this);
-        mBLEController.setBluetoothListener(mBluetoothLEListener);
+        mBLEController.addListener(BluetoothLEListener.class, mBluetoothLEListener);
 
         mList = new ArrayList<String>();
         mFoundAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mList);
@@ -559,7 +560,7 @@ public class BleActivity extends AppCompatActivity {
         }
     };
 
-    private OnResponseHandler responseHandler = new OnResponseHandler() {
+    private OnGettingHandler responseHandler = new OnGettingHandler() {
         @Override
         public void onUpgrade(BaseResponse response) {
 
