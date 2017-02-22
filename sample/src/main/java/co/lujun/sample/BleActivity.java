@@ -1,7 +1,6 @@
 package co.lujun.sample;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -68,7 +67,6 @@ import static android.Manifest.permission.BLUETOOTH_ADMIN;
  * Author: lujun(http://blog.lujun.co)
  * Date: 2016-1-25 17:53
  */
-@TargetApi(21)
 public class BleActivity extends AppCompatActivity {
 
     private static final int PERMISSION_REQUEST = 29;
