@@ -661,7 +661,7 @@ public class BleActivity extends AppCompatActivity {
 
         @Override
         public void onSyncPacketReceived(byte[] data) {
-            CommandController.shared().addSportPacket(data);
+            CommandController.shared().addPacket(data);
         }
 
         @Override
