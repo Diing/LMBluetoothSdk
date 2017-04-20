@@ -423,13 +423,13 @@ public class BleActivity extends AppCompatActivity {
                 }
                 final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
                 registerReceiver(mBondingBroadcastReceiver, filter);
-//                byte[] data = GetDeviceInfoKit.getCommand();
-//                byte[] data = GetDeviceTimeKit.getCommand();
-//                byte[] data = GetSupportFunctionsKit.getCommand();
-//                byte[] data = GetMacAddress.getCommand();
-//                byte[] data = GetBattertInfoKit.getCommand();
-//                byte[] data = GetRealTimeDataKit.getCommand();
-//                byte[] data = GetRealTimeBodhi.getCommand();
+//                byte[] data = GetDeviceInfoKit.getNotifyCommand();
+//                byte[] data = GetDeviceTimeKit.getNotifyCommand();
+//                byte[] data = GetSupportFunctionsKit.getNotifyCommand();
+//                byte[] data = GetMacAddress.getNotifyCommand();
+//                byte[] data = GetBattertInfoKit.getNotifyCommand();
+//                byte[] data = GetRealTimeDataKit.getNotifyCommand();
+//                byte[] data = GetRealTimeBodhi.getNotifyCommand();
                 byte[] data = UnBindKit.getCommand();
                 Utils.logCommand("onClick", data);
                 mBLEController.write(data);
